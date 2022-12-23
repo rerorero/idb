@@ -312,20 +312,25 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 - (NSArray<id<FBXCTestDescriptor>> *)listTestDescriptorsWithError:(NSError **)error
 {
+  [self.logger log:@"natoring: start listTestDescriptorsWithError"];
   NSMutableArray<id<FBXCTestDescriptor>> *testDescriptors = [[NSMutableArray alloc] init];
 
   // Get xctest bundles
   NSSet<NSURL *> *testURLS = [self listTestBundlesWithError:error];
   if (!testURLS) {
+    [self.logger log:@"natoring: list 1"];
     return nil;
   } else if (error) {
+    [self.logger log:@"natoring: list 2"];
     *error = nil;
   }
   // Get xctestrun files
   NSSet<NSURL *> *xcTestRunURLS = [self listXCTestRunFilesWithError:error];
   if (!xcTestRunURLS) {
+    [self.logger log:@"natoring: list 3"];
     return nil;
   } else if (error) {
+    [self.logger log:@"natoring: list 4"];
     *error = nil;
   }
 
@@ -334,12 +339,14 @@ static NSString *const XctestRunExtension = @"xctestrun";
     FBBundleDescriptor *bundle = [FBBundleDescriptor bundleWithFallbackIdentifierFromPath:testURL.path error:error];
     if (!bundle) {
       if (error) {
+        [self.logger log:@"natoring: list 5 error"];
         [self.logger.error log:(*error).description];
       }
       continue;
     }
 
     id<FBXCTestDescriptor> testDescriptor = [[FBXCTestBootstrapDescriptor alloc] initWithURL:testURL name:bundle.name testBundle:bundle];
+    [self.logger logFormat:@"natoring: list 6 %@", testDescriptor];
 
     [testDescriptors addObject:testDescriptor];
   }
@@ -348,11 +355,14 @@ static NSString *const XctestRunExtension = @"xctestrun";
   for (NSURL *xcTestRunURL in xcTestRunURLS) {
     NSArray<id<FBXCTestDescriptor>> *descriptors = [self getXCTestRunDescriptorsFromURL:xcTestRunURL error:error];
     if (!descriptors) {
+      [self.logger log:@"natoring: list 7"];
       return nil;
     }
+    [self.logger logFormat:@"natoring: list 8 %@", descriptors];
     [testDescriptors addObjectsFromArray:descriptors];
   }
 
+  [self.logger log:@"natoring: end listTestDescriptorsWithError"];
   return [NSArray arrayWithArray:testDescriptors];
 }
 
@@ -388,6 +398,8 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 - (NSSet<NSURL *> *)listXCTestContentsWithExtension:(NSString *)extention error:(NSError **)error
 {
+  [self.logger logFormat:@"natoring: start listXCTestContentsWithExtension %@", extention];
+
   NSArray<NSURL *> *directories = [NSFileManager.defaultManager
     contentsOfDirectoryAtURL:self.basePath
     includingPropertiesForKeys:nil
